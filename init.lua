@@ -50,7 +50,7 @@ local function check_updates()
 	core.log_quiet("checking for updates...")
 
 	core.add_thread(function()
-		local raw_data = fetch("https://api.github.com/repos/franko/lite-xl/releases")
+		local raw_data = fetch("https://api.github.com/repos/lite-xl/lite-xl/releases")
 		local data = json.decode(raw_data)
 
 		core.log_quiet(data[1].tag_name)
