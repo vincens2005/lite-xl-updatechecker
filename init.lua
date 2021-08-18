@@ -10,8 +10,7 @@ config.updatechecker_timeout = 3 -- increase this value if you get json.lua erro
 -- stolen from git status
 local function exec(cmd, wait)
 	local proc = process.start(cmd, {timeout = wait})
-	coroutine.yield(wait)
-	proc:wait(wait)
+	proc:wait(wait * 1000)
 	local res = proc:read_stdout(4096 * 10)
 	return res
 end
@@ -45,59 +44,59 @@ end
 local function check_updates()
 	core.log_quiet("checking for updates...")
 
-	core.add_thread(function()
-		local raw_data = fetch("https://api.github.com/repos/lite-xl/lite-xl/releases/latest")
-		local data = json.decode(raw_data)
 
-		core.log_quiet(data.tag_name)
+	local raw_data = fetch("https://api.github.com/repos/lite-xl/lite-xl/releases/latest")
+	local data = json.decode(raw_data)
 
-		local current_version = "v" .. VERSION
+	core.log_quiet(data.tag_name)
 
-		if current_version == data.tag_name or data.draft or data.prerelease then
-			core.log_quiet("lite-xl is up to date")
-			return
+	local current_version = "v" .. VERSION
+
+	if current_version == data.tag_name or data.draft or data.prerelease then
+		core.log_quiet("lite-xl is up to date")
+		return
+	end
+
+	local opt = {
+		{font = style.font, text = "ignore", default_no = true},
+		{font = style.font, text = "download", default_yes = true}
+	}
+
+	core.nag_view:show("new update available",
+											"lite xl " .. data.tag_name .. " is ready to download", opt, function(item)
+
+		if item.text == "download" then
+			core.add_thread(function()
+				local os_name = get_os()
+
+				-- if on windows, just open release page, since multiple windows binaries exist
+				if os_name == "windows" then
+					system.exec("start " .. data.html_url)
+					core.log("opening in browser...")
+					return
+				end
+
+				if os_name == "linux" then
+					local download_item = arr_find(data.assets, function(asset)
+						return asset.browser_download_url:find("linux")
+					end)
+					core.log("opening in browser...")
+					system.exec("xdg-open " .. download_item.browser_download_url)
+					return
+				end
+
+				if os_name == "macos" then
+					local download_item = arr_find(data.assets, function(asset)
+						return asset.browser_download_url:find("macos")
+					end)
+					system.exec("open " .. download_item.browser_download_url)
+					core.log("opening in browser...")
+					return
+				end
+			end)
 		end
-
-		local opt = {
-			{font = style.font, text = "ignore", default_no = true},
-			{font = style.font, text = "download", default_yes = true}
-		}
-
-		core.nag_view:show("new update available",
-		                   "lite xl " .. data.tag_name .. " is ready to download", opt, function(item)
-
-			if item.text == "download" then
-				core.add_thread(function()
-					local os_name = get_os()
-
-					-- if on windows, just open release page, since multiple windows binaries exist
-					if os_name == "windows" then
-						system.exec("start " .. data.html_url)
-						core.log("opening in browser...")
-						return
-					end
-
-					if os_name == "linux" then
-						local download_item = arr_find(data.assets, function(asset)
-							return asset.browser_download_url:find("linux")
-						end)
-						core.log("opening in browser...")
-						system.exec("xdg-open " .. download_item.browser_download_url)
-						return
-					end
-
-					if os_name == "macos" then
-						local download_item = arr_find(data.assets, function(asset)
-							return asset.browser_download_url:find("macos")
-						end)
-						system.exec("open " .. download_item.browser_download_url)
-						core.log("opening in browser...")
-						return
-					end
-				end)
-			end
-		end)
 	end)
+
 end
 
 command.add(nil, {["update-checker:check-for-updates"] = check_updates})

@@ -1,0 +1,14 @@
+diff --git a/init.lua b/init.lua
+index aa2a464..58faaed 100644
+--- a/init.lua
++++ b/init.lua
+@@ -10,8 +10,7 @@ config.updatechecker_timeout = 3 -- increase this value if you get json.lua erro
+ -- stolen from git status
+ local function exec(cmd, wait)
+ 	local proc = process.start(cmd, {timeout = wait})
+-	coroutine.yield(wait)
+-	proc:wait(wait)
++	proc:wait(wait * 1000)
+ 	local res = proc:read_stdout(4096 * 10)
+ 	return res
+ end
