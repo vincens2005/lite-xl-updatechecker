@@ -25,7 +25,7 @@ local function get_os()
 	if PATHSEP == "\\" then
 		return "windows"
 	end
-	if exec("uname -s", 1):find("Linux") then
+	if exec({"uname", "-s"}, 1):find("Linux") then
 		return "linux"
 	end
 
