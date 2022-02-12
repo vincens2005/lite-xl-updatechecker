@@ -48,11 +48,12 @@ local function check_updates()
 	local raw_data = fetch("https://api.github.com/repos/lite-xl/lite-xl/releases/latest")
 	local data = json.decode(raw_data)
 
-	core.log_quiet(data.tag_name)
-
 	local current_version = "v" .. VERSION
 
-	if current_version == data.tag_name or data.draft or data.prerelease then
+	core.log_quiet("latest: " .. data.tag_name .. " installed: " .. current_version )
+
+	if current_version == data.tag_name or current_version == data.tag_name .. "-luajit"
+			or data.draft or data.prerelease then
 		core.log_quiet("lite-xl is up to date")
 		return
 	end
